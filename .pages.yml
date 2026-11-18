@@ -1,0 +1,70 @@
+# Налаштування візуального редактора Pages CMS (https://pagescms.org)
+media:
+  input: public/media
+  output: /media
+
+content:
+  - name: blog
+    label: Блог
+    type: collection
+    path: src/content/blog
+    filename: "{fields.slug}.md"
+    view:
+      fields: [title, date, draft]
+    fields:
+      - name: title
+        label: Заголовок
+        type: string
+        required: true
+      - name: slug
+        label: Адреса сторінки (латиницею, через дефіс, напр. shcho-take-cac)
+        type: string
+        required: true
+      - name: description
+        label: Короткий опис (для Google і соцмереж, до 160 символів)
+        type: text
+      - name: date
+        label: Дата публікації
+        type: date
+        required: true
+      - name: draft
+        label: Чернетка (не показувати на сайті)
+        type: boolean
+        default: false
+      - name: body
+        label: Текст
+        type: rich-text
+
+  - name: cases
+    label: Кейси
+    type: collection
+    path: src/content/cases
+    filename: "{fields.slug}.md"
+    view:
+      fields: [title, order, featured]
+    fields:
+      - { name: title, label: Заголовок, type: string, required: true }
+      - { name: slug, label: Назва файлу (латиницею), type: string, required: true }
+      - { name: who, label: Хто (тип компанії, без назви), type: string, required: true }
+      - { name: problem, label: Ґандж (що було не так), type: text, required: true }
+      - { name: did, label: Розбір (що зробили), type: text, required: true }
+      - { name: found, label: Що виявилось, type: text }
+      - { name: decision, label: Рішення / результат, type: text, required: true }
+      - { name: metric, label: Цифра крупно (необов'язково), type: string }
+      - { name: limit, label: Чесна межа (чого кейс не доводить), type: text }
+      - { name: order, label: Порядок (менше = вище), type: number, default: 100 }
+      - { name: featured, label: Показувати на головній, type: boolean, default: false }
+
+  - name: settings
+    label: Налаштування сайту
+    type: file
+    path: src/data/settings.json
+    format: json
+    fields:
+      - { name: formEndpoint, label: "Адреса форми (напр. https://api.web3forms.com/submit)", type: string }
+      - { name: formAccessKey, label: Ключ форми (Web3Forms access key), type: string }
+      - { name: gaId, label: "Google Analytics ID (G-XXXXXXX)", type: string }
+      - { name: email, label: Email для зв'язку, type: string }
+      - { name: telegram, label: Telegram (@нік), type: string }
+      - { name: linkedin, label: LinkedIn (посилання), type: string }
+      - { name: portfolio, label: Портфоліо (посилання), type: string }

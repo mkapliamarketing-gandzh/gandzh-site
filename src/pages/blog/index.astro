@@ -1,0 +1,32 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/PageHero.astro';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const fmt = new Intl.DateTimeFormat('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+<Base
+  title="Блог — Ґандж"
+  description="Про маркетинг, що говорить грошима: CAC, ROMI, аналітика, CRM і як зрозуміти, що з вашого маркетингу працює."
+>
+  <PageHero tag="Блог" title="Розбираємо ґанджі" lead="Пишемо рідше, але по суті: як зрозуміти, що з маркетингу працює і куди дівається бюджет." />
+  <section class="prose-section">
+    <div class="container narrow">
+      {posts.length === 0 && <p>Перші статті вже пишуться.</p>}
+      <ul class="post-list">
+        {posts.map((p) => (
+          <li>
+            <a href={`/blog/${p.id}/`}>
+              <time datetime={p.data.date.toISOString()}>{fmt.format(p.data.date)}</time>
+              <h2>{p.data.title}</h2>
+              {p.data.description && <p>{p.data.description}</p>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Base>

@@ -1,0 +1,18 @@
+---
+interface Props {
+  tag: string;
+  title: string;
+  lead?: string;
+  cta?: string;
+}
+const { tag, title, lead, cta } = Astro.props;
+---
+<section class="page-hero">
+  <div class="container">
+    <div class="section-tag">{tag}</div>
+    <h1 class="page-title">{title}</h1>
+    {lead && <p class="page-lead">{lead}</p>}
+    {cta && <a href="#contact" class="btn btn-primary">{cta}</a>}
+    <slot />
+  </div>
+</section>

@@ -1,0 +1,40 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'cases'>;
+  index: number;
+}
+const { entry, index } = Astro.props;
+const c = entry.data;
+const num = String(index + 1).padStart(2, '0');
+---
+<article class="case-card">
+  <div class="case-head">
+    <span class="case-niche">{c.who}</span>
+    <span class="case-id">КЕЙС // {num}</span>
+  </div>
+  <div class="case-body">
+    <h3 class="case-title">{c.title}</h3>
+    <div class="case-block">
+      <span class="case-label is-defect">Ґандж:</span>
+      <p>{c.problem}</p>
+    </div>
+    <div class="case-block">
+      <span class="case-label is-fix">Розбір:</span>
+      <p>{c.did}</p>
+    </div>
+    {c.found && (
+      <div class="case-block">
+        <span class="case-label is-fix">Що виявилось:</span>
+        <p>{c.found}</p>
+      </div>
+    )}
+  </div>
+  <div class="case-result">
+    <span class="case-label">Рішення:</span>
+    {c.metric && <div class="case-metrics">{c.metric}</div>}
+    <p class="case-decision">{c.decision}</p>
+    {c.limit && <div class="case-metrics-sub"><b>Чесна межа:</b> {c.limit}</div>}
+  </div>
+</article>

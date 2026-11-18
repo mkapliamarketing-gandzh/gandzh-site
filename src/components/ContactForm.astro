@@ -1,0 +1,200 @@
+---
+import settings from '../data/settings.json';
+import { defects } from '../data/defects';
+
+interface Props {
+  title?: string;
+  lead?: string;
+}
+const {
+  title = 'Покажіть свій ґандж',
+  lead = 'Розкажіть, що болить. Відповімо особисто і запропонуємо 30-хвилинну розмову. Якщо побачимо, що вам потрібні не ми, так і скажемо.',
+} = Astro.props;
+
+const fallbackContact = settings.email
+  ? `напишіть на ${settings.email}`
+  : settings.telegram
+    ? `напишіть у Telegram ${settings.telegram}`
+    : 'спробуйте трохи пізніше';
+---
+<section class="cta-section" id="contact">
+  <div class="container">
+    <div class="cta-grid">
+      <div class="cta-copy">
+        <div class="section-tag">Запис у бокс</div>
+        <h2 class="section-title">{title}</h2>
+        <p>{lead}</p>
+
+        <ul class="cta-promises">
+          <li><span>[01]</span> Без настирливого продажу «пакета за всі гроші» на першій розмові.</li>
+          <li><span>[02]</span> Якщо ваш маркетинг насправді нормальний, а проблема в продукті чи ціні, скажемо прямо.</li>
+          <li><span>[03]</span> Відповідає людина, а не бот.</li>
+        </ul>
+      </div>
+
+      <div class="form-card">
+        <form
+          class="gandzh-form"
+          id="gandzhForm"
+          novalidate
+          data-endpoint={settings.formEndpoint}
+          data-access-key={settings.formAccessKey}
+          data-fallback={fallbackContact}
+        >
+          <div class="form-row">
+            <div class="form-group">
+              <label for="nameInput">Ваше ім’я *</label>
+              <input class="form-control" type="text" id="nameInput" name="name" autocomplete="name" required />
+            </div>
+            <div class="form-group">
+              <label for="companyInput">Компанія або сайт</label>
+              <input class="form-control" type="text" id="companyInput" name="company" autocomplete="organization" placeholder="https://..." />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="contactInput">Як з вами зв’язатися *</label>
+            <input class="form-control" type="text" id="contactInput" name="contact" required placeholder="Email, Telegram або LinkedIn" />
+          </div>
+
+          <fieldset class="form-group">
+            <legend>Які ґанджі вже помітили?</legend>
+            <div class="chips-group" id="formChips">
+              {defects.map((d) => (
+                <label class="chip-label"><input type="checkbox" name="symptoms" value={d.title} />{d.chip}</label>
+              ))}
+              <label class="chip-label"><input type="checkbox" name="symptoms" value="Інше" />Інше</label>
+            </div>
+          </fieldset>
+
+          <div class="form-group">
+            <label for="painInput">Що болить найбільше?</label>
+            <textarea class="form-control" id="painInput" name="pain" placeholder="Наприклад: платимо агенції за рекламу, а продажі кажуть, що заявок немає"></textarea>
+          </div>
+
+          <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+          <button type="submit" class="btn btn-primary form-submit">Надіслати ґандж →</button>
+          <p class="form-error" role="alert" hidden></p>
+          <p class="form-disclaimer">Ніякого спаму і розсилок без вашої згоди.</p>
+        </form>
+
+        <div class="form-success" id="formSuccess" tabindex="-1">
+          <div class="ticket-box">
+            <div class="ticket-meta">ТАЛОН ТЕХОГЛЯДУ • ПРИЙНЯТО</div>
+            <h3>Ґандж отримали!</h3>
+            <p id="ticketSummary">Дякуємо! Прочитаємо уважно й відповімо особисто.</p>
+          </div>
+          <button type="button" class="btn btn-outline" id="resetFormBtn">Надіслати ще одну заявку</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  declare global {
+    interface Window { gtag?: (...args: unknown[]) => void }
+  }
+
+  const form = document.getElementById('gandzhForm') as HTMLFormElement | null;
+  const success = document.getElementById('formSuccess');
+  const summary = document.getElementById('ticketSummary');
+  const resetBtn = document.getElementById('resetFormBtn');
+
+  if (form && success && summary && resetBtn) {
+    const errorEl = form.querySelector('.form-error') as HTMLParagraphElement;
+    const submitBtn = form.querySelector('.form-submit') as HTMLButtonElement;
+    const chips = form.querySelectorAll<HTMLLabelElement>('.chip-label');
+
+    chips.forEach((chip) => {
+      const input = chip.querySelector('input')!;
+      input.addEventListener('change', () => {
+        chip.classList.toggle('checked', input.checked);
+        document.dispatchEvent(new CustomEvent('gandzh:chip', { detail: { value: input.value, checked: input.checked } }));
+      });
+    });
+
+    function showError(msg: string) {
+      errorEl.textContent = msg;
+      errorEl.hidden = false;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.hidden = true;
+
+      const name = form.elements.namedItem('name') as HTMLInputElement;
+      const contact = form.elements.namedItem('contact') as HTMLInputElement;
+      for (const field of [name, contact]) {
+        field.classList.remove('invalid');
+        if (!field.value.trim()) {
+          field.classList.add('invalid');
+          field.focus();
+          return;
+        }
+      }
+
+      const data = new FormData(form);
+      if (data.get('botcheck')) return;
+
+      const symptoms = data.getAll('symptoms').map(String);
+      const payload: Record<string, string> = {
+        subject: 'Новий ґандж із сайту',
+        from_name: 'Сайт Ґандж',
+        name: name.value.trim(),
+        company: String(data.get('company') || ''),
+        contact: contact.value.trim(),
+        symptoms: symptoms.join(', '),
+        pain: String(data.get('pain') || ''),
+        page: location.pathname,
+      };
+      if (form.dataset.accessKey) payload.access_key = form.dataset.accessKey;
+
+      const endpoint = form.dataset.endpoint;
+      if (!endpoint) {
+        showError(`Форма ще не підключена до пошти. Поки що ${form.dataset.fallback}.`);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Надсилаємо…';
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+
+        window.gtag?.('event', 'generate_lead', {
+          form_location: location.pathname,
+          symptoms_count: symptoms.length,
+        });
+
+        summary.textContent =
+          `Дякуємо, ${payload.name}! Прочитаємо уважно й відповімо за контактом ${payload.contact}.` +
+          (symptoms.length ? ` Позначені симптоми: ${symptoms.join(', ')}.` : '');
+        form.style.display = 'none';
+        success.classList.add('visible');
+        success.focus();
+      } catch {
+        showError(`Не вдалося надіслати. Спробуйте ще раз або ${form.dataset.fallback}.`);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Надіслати ґандж →';
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      form.reset();
+      chips.forEach((chip) => {
+        chip.classList.remove('checked');
+        const input = chip.querySelector('input')!;
+        document.dispatchEvent(new CustomEvent('gandzh:chip', { detail: { value: input.value, checked: false } }));
+      });
+      success.classList.remove('visible');
+      form.style.display = 'block';
+    });
+  }
+</script>

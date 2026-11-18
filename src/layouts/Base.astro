@@ -1,0 +1,175 @@
+---
+import '../styles/global.css';
+import '../styles/site.css';
+import settings from '../data/settings.json';
+import ContactForm from '../components/ContactForm.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Показувати форму заявки внизу сторінки */
+  form?: boolean;
+  formTitle?: string;
+  formLead?: string;
+  type?: 'website' | 'article';
+}
+
+const {
+  title,
+  description,
+  form = true,
+  formTitle,
+  formLead,
+  type = 'website',
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const path = Astro.url.pathname;
+
+const nav = [
+  { href: '/yak-pratsiuiemo/', label: 'Як працюємо' },
+  { href: '/tekhohliad-pidriadnyka/', label: 'Техогляд підрядника' },
+  { href: '/keisy/', label: 'Кейси' },
+  { href: '/blog/', label: 'Блог' },
+  { href: '/pro-mene/', label: 'Про мене' },
+];
+const isActive = (href: string) => path === href || (href !== '/' && path.startsWith(href));
+const cta = form ? '#contact' : '/#contact';
+const year = new Date().getFullYear();
+const tg = settings.telegram ? settings.telegram.replace(/^@/, '') : '';
+---
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonical} />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="sitemap" href="/sitemap-index.xml" />
+
+  <meta property="og:type" content={type} />
+  <meta property="og:locale" content="uk_UA" />
+  <meta property="og:site_name" content="Ґандж" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:image" content={new URL('/og.png', Astro.site)} />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Unbounded:wght@500;700;800;900&display=swap" rel="stylesheet" />
+
+  {settings.gaId && (
+    <>
+      <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${settings.gaId}`}></script>
+      <script is:inline define:vars={{ gaId: settings.gaId }}>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ dataLayer.push(arguments); }
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', gaId);
+      </script>
+    </>
+  )}
+  <slot name="head" />
+</head>
+<body class="bg-grid">
+  <a class="skip-link" href="#main">До змісту</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo" aria-label="Ґандж — на головну">
+        <span class="logo-mark">Ґ</span>
+        <span>ҐАНДЖ</span>
+      </a>
+
+      <nav aria-label="Головна навігація">
+        <ul class="nav-links">
+          {nav.map((item) => (
+            <li><a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a></li>
+          ))}
+        </ul>
+      </nav>
+
+      <a href={cta} class="btn btn-primary header-cta">Показати ґандж</a>
+
+      <button class="burger-btn" id="burgerBtn" type="button" aria-label="Відкрити меню" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <div class="mobile-menu" id="mobileMenu">
+      <ul>
+        <li><a href="/">Головна</a></li>
+        {nav.map((item) => (
+          <li><a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a></li>
+        ))}
+      </ul>
+      <a href={cta} class="btn btn-primary">Показати ґандж</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <slot />
+    {form && <ContactForm title={formTitle} lead={formLead} />}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div>
+          <div class="footer-brand">ҐАНДЖ</div>
+          <p class="footer-tagline">
+            Маркетинг-лід на частину часу для B2B. Знаходимо, де протікають гроші, лагодимо основне і ведемо маркетинг далі.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Сторінки</h4>
+          <ul>
+            <li><a href="/">Головна</a></li>
+            {nav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Зв’язок</h4>
+          <ul>
+            <li><a href="/#contact">Форма заявки</a></li>
+            {settings.email && <li><a href={`mailto:${settings.email}`}>{settings.email}</a></li>}
+            {tg && <li><a href={`https://t.me/${tg}`} rel="noopener" target="_blank">Telegram: @{tg}</a></li>}
+            {settings.linkedin && <li><a href={settings.linkedin} rel="noopener" target="_blank">LinkedIn</a></li>}
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© {year} Ґандж</span>
+        <span>Жоден невинний підрядник під час аудиту не постраждав (але це не точно).</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const burgerBtn = document.getElementById('burgerBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    if (burgerBtn && mobileMenu) {
+      burgerBtn.addEventListener('click', () => {
+        const isOpen = mobileMenu.classList.toggle('open');
+        burgerBtn.setAttribute('aria-expanded', String(isOpen));
+      });
+      mobileMenu.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.remove('open');
+          burgerBtn.setAttribute('aria-expanded', 'false');
+        });
+      });
+    }
+  </script>
+</body>
+</html>
